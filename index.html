@@ -3,268 +3,126 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>找牛求解器</title>
+  <title>找牛谜题求解器</title>
   <style>
-    :root {
-      --bg: #f6f7fb;
-      --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --line: #d1d5db;
-      --accent: #2563eb;
-      --good: #16a34a;
-      --bad: #dc2626;
-      --shadow: 0 10px 30px rgba(0,0,0,0.08);
-    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      background: #f6f7fb;
+      color: #1f2937;
     }
-    .wrap { max-width: 1400px; margin: 0 auto; padding: 20px; }
-    h1 { margin: 0 0 8px; font-size: 28px; }
-    .sub { color: var(--muted); margin-bottom: 18px; line-height: 1.6; }
-    .layout { display: grid; grid-template-columns: 380px 1fr; gap: 18px; align-items: start; }
-    .panel, .board-card { background: var(--card); border-radius: 20px; box-shadow: var(--shadow); padding: 18px; }
-    .section + .section { margin-top: 18px; padding-top: 16px; border-top: 1px solid #eef0f4; }
-    .row { display: grid; grid-template-columns: 1fr 110px; gap: 10px; align-items: center; margin: 10px 0; }
-    .row.single { grid-template-columns: 1fr; }
-    label { font-size: 14px; color: var(--text); font-weight: 600; }
-    input[type="number"], select { width: 100%; border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; background: #fff; }
-    .btns { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
-    button { border: 0; border-radius: 12px; padding: 10px 14px; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform .05s ease, opacity .2s ease; }
-    button:hover { opacity: .95; }
+    .wrap { max-width: 800px; margin: 0 auto; padding: 24px 20px; }
+    h1 { margin: 0 0 6px; font-size: 24px; text-align: center; }
+    .sub { color: #6b7280; font-size: 13px; text-align: center; margin-bottom: 20px; }
+    .toolbar {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+      background: #fff; border-radius: 16px; padding: 14px 18px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 16px;
+    }
+    .toolbar label { font-size: 13px; font-weight: 600; color: #374151; white-space: nowrap; }
+    .toolbar input[type="number"] {
+      width: 60px; border: 1px solid #d1d5db; border-radius: 10px;
+      padding: 8px 10px; font-size: 14px; text-align: center;
+    }
+    .toolbar input[type="file"] { font-size: 13px; min-width: 0; flex: 1; }
+    .toolbar .spacer { flex: 1; }
+    button {
+      border: 0; border-radius: 12px; padding: 10px 20px; font-size: 14px;
+      font-weight: 700; cursor: pointer; transition: transform .05s, opacity .15s;
+    }
+    button:hover { opacity: .9; }
     button:active { transform: translateY(1px); }
-    .primary { background: var(--accent); color: white; }
+    .primary { background: #2563eb; color: #fff; }
     .secondary { background: #e5e7eb; color: #111827; }
-    .danger { background: #fee2e2; color: #991b1b; }
-    .success { background: #dcfce7; color: #166534; }
-    .mode-chip { display: inline-flex; align-items: center; gap: 8px; background: #eef2ff; color: #3730a3; padding: 8px 12px; border-radius: 999px; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
-    .tips { font-size: 13px; color: var(--muted); line-height: 1.7; background: #f8fafc; border-radius: 14px; padding: 12px 14px; }
-    .board-toolbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-    .legend { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; color: var(--muted); font-size: 13px; }
-    .legend span { display: inline-flex; align-items: center; gap: 6px; }
-    .dot { width: 14px; height: 14px; border-radius: 4px; border: 1px solid rgba(0,0,0,0.1); display: inline-block; }
-    .board-wrap { overflow: auto; border-radius: 16px; background: #f8fafc; padding: 12px; border: 1px solid #eef2f7; user-select: none; touch-action: none; }
-    .board { display: grid; gap: 2px; width: max-content; margin: 0 auto; background: #cbd5e1; padding: 2px; border-radius: 12px; position: relative; }
-    .cell { position: relative; background: white; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #334155; transition: transform .06s ease, outline-color .12s ease; border-radius: 2px; overflow: hidden; cursor: pointer; }
-    .cell:hover { outline: 2px solid rgba(37,99,235,0.35); z-index: 2; }
-    .cell .region-id { position: absolute; left: 4px; top: 2px; font-size: 10px; font-weight: 800; opacity: 0.55; pointer-events: none; }
-    .cell .cow { font-size: 26px; line-height: 1; filter: drop-shadow(0 1px 0 rgba(255,255,255,.45)); }
-    .cell.selected-drag { outline: 3px solid rgba(37,99,235,0.7); z-index: 3; }
-    .cell.conflict { box-shadow: inset 0 0 0 3px rgba(220,38,38,0.85); }
-    .cell.fix-selected { outline: 3px solid #f59e0b; z-index: 4; }
-    .status { margin-top: 12px; border-radius: 14px; padding: 12px 14px; font-size: 14px; line-height: 1.6; background: #f8fafc; border: 1px solid #e5e7eb; }
-    .status.ok { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
-    .status.err { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
-    .status.info { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
-    .small { color: var(--muted); font-size: 12px; line-height: 1.6; }
-    .grid-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 12px; }
-    .stat { background: #f8fafc; border: 1px solid #e5e7eb; border-radius: 14px; padding: 10px 12px; }
-    .stat .k { font-size: 12px; color: var(--muted); }
-    .stat .v { margin-top: 4px; font-size: 18px; font-weight: 800; }
-
-    .color-preview-wrap { margin-top: 12px; }
-    .color-preview-grid { display: grid; gap: 2px; width: max-content; background: #e5e7eb; padding: 2px; border-radius: 8px; }
-    .color-preview-cell { width: 28px; height: 28px; border-radius: 2px; cursor: pointer; position: relative; }
-    .color-preview-cell:hover { outline: 2px solid rgba(0,0,0,0.3); z-index: 1; }
-    .color-preview-cell .cpc-label { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 800; color: rgba(0,0,0,0.4); pointer-events: none; }
-
-    .region-palette { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
-    .region-swatch { width: 32px; height: 32px; border-radius: 8px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: rgba(0,0,0,0.4); transition: border-color .15s; }
-    .region-swatch:hover { border-color: rgba(0,0,0,0.3); }
-    .region-swatch.active { border-color: #f59e0b; box-shadow: 0 0 0 2px #fbbf24; }
-
-    .preview-canvas-wrap { position: relative; margin-top: 12px; }
-    .preview-canvas-wrap canvas { width: 100%; max-height: 280px; border-radius: 14px; border: 1px solid #e5e7eb; background: #f8fafc; display: block; }
-
-    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+    .board-card {
+      background: #fff; border-radius: 20px; padding: 16px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .board-wrap {
+      overflow: auto; border-radius: 14px; background: #f1f5f9;
+      padding: 10px; border: 1px solid #e2e8f0; user-select: none;
+    }
+    .board {
+      display: grid; gap: 2px; width: max-content; margin: 0 auto;
+      background: #94a3b8; padding: 2px; border-radius: 10px;
+    }
+    .cell {
+      position: relative; background: #fff; display: flex;
+      align-items: center; justify-content: center;
+      border-radius: 3px; overflow: hidden;
+    }
+    .cell .rid {
+      position: absolute; left: 3px; top: 1px;
+      font-size: 9px; font-weight: 800; opacity: .45; pointer-events: none;
+    }
+    .cell .cow { font-size: 24px; line-height: 1; filter: drop-shadow(0 1px 0 rgba(255,255,255,.5)); }
+    .status {
+      margin-top: 14px; border-radius: 14px; padding: 12px 16px;
+      font-size: 14px; line-height: 1.6; text-align: center;
+    }
+    .status.ok { background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; }
+    .status.err { background: #fef2f2; border: 1px solid #fecaca; color: #991b1b; }
+    .status.info { background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; }
+    .stats {
+      display: flex; justify-content: center; gap: 24px;
+      margin-top: 10px; font-size: 13px; color: #6b7280;
+    }
+    .stats b { color: #1f2937; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>小牛区块谜题求解器</h1>
-    <div class="sub">
-      上传游戏截图自动识别棋盘颜色分区，或手动拖动划分区块，然后自动求解。<br>
-      规则：<b>每行、每列、每区块恰好 K 头牛，牛之间不能相邻（含对角线）</b>。
-    </div>
+<div class="wrap">
+  <h1>找牛谜题求解器</h1>
+  <div class="sub">上传游戏截图，自动识别棋盘分区并求解。规则：每行/列/区块各 K 头牛，牛不相邻（含对角线）。</div>
 
-    <div class="layout">
-      <div class="panel">
-        <div class="section">
-          <div class="mode-chip">⚙️ 参数设置</div>
-          <div class="row">
-            <label for="sizeInput">棋盘边长（N×N）</label>
-            <input id="sizeInput" type="number" min="2" max="14" value="8" />
-          </div>
-          <div class="row">
-            <label for="cellSizeInput">格子像素尺寸</label>
-            <input id="cellSizeInput" type="number" min="24" max="80" value="56" />
-          </div>
-          <div class="row single">
-            <label for="modeSelect">题目模式</label>
-            <select id="modeSelect">
-              <option value="1">每行 / 每列 / 每个区块 各 1 头牛</option>
-              <option value="2" selected>每行 / 每列 / 每个区块 各 2 头牛</option>
-            </select>
-          </div>
-          <div class="btns">
-            <button class="primary" id="buildBtn">重建棋盘</button>
-            <button class="secondary" id="autoColorBtn">随机重染区块</button>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="mode-chip">🖼️ 截图识别</div>
-          <div class="row single">
-            <label for="imageUpload">上传游戏截图</label>
-            <input id="imageUpload" type="file" accept="image/*" />
-          </div>
-          <div class="row">
-            <label for="detectToleranceInput">色差阈值 (CIEDE2000)</label>
-            <input id="detectToleranceInput" type="number" min="3" max="30" step="0.5" value="12" />
-          </div>
-          <div class="row">
-            <label for="detectInsetInput">格子取样内缩比</label>
-            <input id="detectInsetInput" type="number" min="0.05" max="0.4" step="0.01" value="0.22" />
-          </div>
-          <div style="margin:10px 0 4px;display:flex;align-items:center;gap:8px;">
-            <label style="display:flex;align-items:center;gap:4px;cursor:pointer;white-space:nowrap;">
-              <input type="checkbox" id="manualCropCheck" style="width:auto;margin:0;" /> 手动指定裁剪位置
-            </label>
-            <button class="secondary" id="lockCropBtn" style="font-size:11px;padding:4px 10px;margin:0;">锁定当前检测框</button>
-          </div>
-          <div id="manualCropFields" style="display:none;">
-            <div class="row">
-              <label for="cropTopInput">棋盘顶部 (% 高度)</label>
-              <input id="cropTopInput" type="number" min="0" max="90" step="0.5" value="32" />
-            </div>
-            <div class="row">
-              <label for="cropLeftInput">棋盘左侧 (% 宽度)</label>
-              <input id="cropLeftInput" type="number" min="0" max="90" step="0.5" value="3" />
-            </div>
-            <div class="row">
-              <label for="cropSizeInput">棋盘宽度 (% 宽度)</label>
-              <input id="cropSizeInput" type="number" min="10" max="100" step="0.5" value="93" />
-            </div>
-          </div>
-          <div class="btns">
-            <button class="secondary" id="detectBtn">识别分区</button>
-            <button class="primary" id="detectAndSolveBtn">识别并求解</button>
-          </div>
-          <div class="small" style="margin-top:10px;">
-            使用 LAB 色彩空间 + CIEDE2000 色差 + 层次聚类算法识别。<br>
-            若位置偏移可勾选"手动指定裁剪位置"微调，或点"锁定当前检测框"固定位置。
-          </div>
-          <div class="preview-canvas-wrap">
-            <canvas id="imagePreview" style="display:none;"></canvas>
-          </div>
-          <div class="color-preview-wrap" id="colorPreviewWrap" style="display:none;">
-            <div class="small" style="margin-bottom:6px;font-weight:600;">采样颜色矩阵（实际从截图提取的颜色）：</div>
-            <div id="colorPreviewGrid" class="color-preview-grid"></div>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="mode-chip">✋ 划分 / 修正区块</div>
-          <div class="tips">
-            <b>拖动划分：</b>按住鼠标滑过格子，松手后合并为同一区块。<br>
-            <b>修正模式：</b>先点击下方色块选中一个区块，再点击棋盘格子将其改为该区块。再次点击色块取消选中。
-          </div>
-          <div id="regionPaletteWrap" style="display:none;">
-            <div class="small" style="margin-bottom:4px;font-weight:600;">点击选择要绘制的区块：</div>
-            <div id="regionPalette" class="region-palette"></div>
-          </div>
-          <div class="btns">
-            <button class="secondary" id="fillSinglesBtn">未划分格子单独成块</button>
-            <button class="secondary" id="undoBtn">撤回</button>
-            <button class="danger" id="clearRegionsBtn">清空区块</button>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="mode-chip">🧠 求解</div>
-          <div class="btns">
-            <button class="primary" id="solveBtn">求解并可视化</button>
-            <button class="secondary" id="checkBtn">检查设定</button>
-            <button class="secondary" id="clearSolutionBtn">清除解答</button>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="mode-chip">📊 统计</div>
-          <div class="grid-stats">
-            <div class="stat"><div class="k">棋盘大小</div><div class="v" id="statSize">8×8</div></div>
-            <div class="stat"><div class="k">区块数量</div><div class="v" id="statRegions">0</div></div>
-            <div class="stat"><div class="k">目标牛数</div><div class="v" id="statTarget">16</div></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="board-card">
-        <div class="board-toolbar">
-          <div class="legend">
-            <span><i class="dot" style="background:#dbeafe"></i>拖动选区</span>
-            <span><i class="dot" style="background:#dcfce7"></i>求解显示牛</span>
-            <span><i class="dot" style="background:#fee2e2"></i>红框=冲突</span>
-            <span><i class="dot" style="background:#fef3c7;border-color:#f59e0b"></i>橙框=修正选中</span>
-          </div>
-        </div>
-        <div class="board-wrap">
-          <div id="board" class="board"></div>
-        </div>
-        <div id="status" class="status info">请上传截图自动识别，或手动划分区块后求解。</div>
-      </div>
-    </div>
+  <div class="toolbar">
+    <label for="sizeInput">棋盘 N×N</label>
+    <input id="sizeInput" type="number" min="5" max="14" value="8" />
+    <select id="modeSelect" style="border:1px solid #d1d5db;border-radius:10px;padding:8px 10px;font-size:14px;font-weight:600;">
+      <option value="1">单牛</option>
+      <option value="2" selected>双牛</option>
+    </select>
+    <input id="imageUpload" type="file" accept="image/*" />
+    <button class="primary" id="solveBtn">识别并求解</button>
+    <button class="secondary" id="clearBtn">清除</button>
   </div>
 
+  <div class="board-card">
+    <div class="board-wrap">
+      <div id="board" class="board"></div>
+    </div>
+    <div id="status" class="status info">上传游戏截图后点击「识别并求解」。</div>
+    <div class="stats">
+      <span>棋盘 <b id="statSize">8×8</b></span>
+      <span>区块 <b id="statRegions">0</b></span>
+      <span>总牛 <b id="statTarget">16</b></span>
+    </div>
+  </div>
+</div>
+
 <script>
-// ======================== State ========================
-const $ = id => document.getElementById(id);
-const boardEl = $('board');
-const statusEl = $('status');
-const sizeInput = $('sizeInput');
-const cellSizeInput = $('cellSizeInput');
-const modeSelect = $('modeSelect');
-const statSize = $('statSize');
-const statRegions = $('statRegions');
-const statTarget = $('statTarget');
-const imageUpload = $('imageUpload');
-const imagePreview = $('imagePreview');
-const detectToleranceInput = $('detectToleranceInput');
-const detectInsetInput = $('detectInsetInput');
-const colorPreviewWrap = $('colorPreviewWrap');
-const colorPreviewGrid = $('colorPreviewGrid');
-const regionPaletteWrap = $('regionPaletteWrap');
-const regionPaletteEl = $('regionPalette');
-const manualCropCheck = $('manualCropCheck');
-const manualCropFields = $('manualCropFields');
-const cropTopInput = $('cropTopInput');
-const cropLeftInput = $('cropLeftInput');
-const cropSizeInput = $('cropSizeInput');
+const CROP_TOP = 0.32, CROP_LEFT = 0.105, CROP_WIDTH = 0.785;
+const TOLERANCE = 3, INSET = 0.26;
+function cowsPerUnit() { return parseInt(document.getElementById('modeSelect').value, 10); }
 
-let N = 8, cellSize = 56, cowsPerUnit = 2;
-let lastDetectedBox = null;
-let regionGrid = [], solution = [], regionCount = 0;
-let regionColors = new Map();
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const sizeInput = document.getElementById('sizeInput');
+const imageUpload = document.getElementById('imageUpload');
+
+let N = 8, cellSize = 52;
+let regionGrid = [], solution = [], regionCount = 0, regionColors = new Map();
 let uploadedImage = null;
-let lastSampledRgb = null;
-let lastSampledLab = null;
-
-let isDragging = false, dragCells = new Set(), dragPath = [];
-let dragPointerId = null, historyStack = [];
-let fixBrushRegion = -1;
 
 const palette = [
   '#f6d365','#fda085','#fbc2eb','#a1c4fd','#c2e9fb','#d4fc79',
-  '#96e6a1','#84fab0','#8fd3f4','#a6c1ee','#cfd9df','#e2ebf0',
-  '#f9d423','#ffb199','#c471ed','#12c2e9','#90f7ec','#b8e986',
-  '#f8cdda','#c6ffdd','#d299c2','#89f7fe','#b7f8db','#d9afd9'
+  '#96e6a1','#84fab0','#8fd3f4','#a6c1ee','#f9d423','#ffb199',
+  '#c471ed','#12c2e9','#90f7ec','#b8e986','#f8cdda','#c6ffdd',
+  '#d299c2','#89f7fe','#b7f8db','#d9afd9','#cfd9df','#e2ebf0'
 ];
 
-// ======================== Color Utilities ========================
+// ==================== Color Utilities ====================
 
 function rgbToLab(r, g, b) {
   let rl = r / 255, gl = g / 255, bl = b / 255;
@@ -282,109 +140,62 @@ function rgbToLab(r, g, b) {
   return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
 }
 
-function labToRgb(L, a, b) {
-  let y = (L + 16) / 116;
-  let x = a / 500 + y;
-  let z = y - b / 200;
-  const e = 0.008856, k = 903.3;
-  x = x * x * x > e ? x * x * x : (116 * x - 16) / k;
-  y = L > k * e ? Math.pow((L + 16) / 116, 3) : L / k;
-  z = z * z * z > e ? z * z * z : (116 * z - 16) / k;
-  x *= 0.95047; y *= 1.00000; z *= 1.08883;
-  let rl = x * 3.2404542 + y * -1.5371385 + z * -0.4985314;
-  let gl = x * -0.9692660 + y * 1.8760108 + z * 0.0415560;
-  let bl = x * 0.0556434 + y * -0.2040259 + z * 1.0572252;
-  rl = rl > 0.0031308 ? 1.055 * Math.pow(rl, 1 / 2.4) - 0.055 : 12.92 * rl;
-  gl = gl > 0.0031308 ? 1.055 * Math.pow(gl, 1 / 2.4) - 0.055 : 12.92 * gl;
-  bl = bl > 0.0031308 ? 1.055 * Math.pow(bl, 1 / 2.4) - 0.055 : 12.92 * bl;
-  return [
-    Math.max(0, Math.min(255, Math.round(rl * 255))),
-    Math.max(0, Math.min(255, Math.round(gl * 255))),
-    Math.max(0, Math.min(255, Math.round(bl * 255)))
-  ];
-}
-
 function rgbToHex(r, g, b) {
   return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
 }
 
 function ciede2000(lab1, lab2) {
-  const [L1, a1, b1] = lab1;
-  const [L2, a2, b2] = lab2;
+  const [L1, a1, b1] = lab1, [L2, a2, b2] = lab2;
   const rad = Math.PI / 180, deg = 180 / Math.PI;
-
-  const C1 = Math.sqrt(a1 * a1 + b1 * b1);
-  const C2 = Math.sqrt(a2 * a2 + b2 * b2);
-  const Cab = (C1 + C2) / 2;
-  const Cab7 = Math.pow(Cab, 7);
+  const C1 = Math.sqrt(a1 * a1 + b1 * b1), C2 = Math.sqrt(a2 * a2 + b2 * b2);
+  const Cab = (C1 + C2) / 2, Cab7 = Math.pow(Cab, 7);
   const G = 0.5 * (1 - Math.sqrt(Cab7 / (Cab7 + 6103515625)));
-
   const a1p = a1 * (1 + G), a2p = a2 * (1 + G);
-  const C1p = Math.sqrt(a1p * a1p + b1 * b1);
-  const C2p = Math.sqrt(a2p * a2p + b2 * b2);
-
+  const C1p = Math.sqrt(a1p * a1p + b1 * b1), C2p = Math.sqrt(a2p * a2p + b2 * b2);
   let h1p = Math.atan2(b1, a1p) * deg; if (h1p < 0) h1p += 360;
   let h2p = Math.atan2(b2, a2p) * deg; if (h2p < 0) h2p += 360;
-
-  const dLp = L2 - L1;
-  const dCp = C2p - C1p;
-
+  const dLp = L2 - L1, dCp = C2p - C1p;
   let dhp;
   if (C1p * C2p === 0) dhp = 0;
   else if (Math.abs(h2p - h1p) <= 180) dhp = h2p - h1p;
   else if (h2p - h1p > 180) dhp = h2p - h1p - 360;
   else dhp = h2p - h1p + 360;
-
   const dHp = 2 * Math.sqrt(C1p * C2p) * Math.sin(dhp / 2 * rad);
-
-  const Lp = (L1 + L2) / 2;
-  const Cp = (C1p + C2p) / 2;
-
+  const Lp = (L1 + L2) / 2, Cp = (C1p + C2p) / 2;
   let hp;
   if (C1p * C2p === 0) hp = h1p + h2p;
   else if (Math.abs(h1p - h2p) <= 180) hp = (h1p + h2p) / 2;
   else if (h1p + h2p < 360) hp = (h1p + h2p + 360) / 2;
   else hp = (h1p + h2p - 360) / 2;
-
-  const T = 1
-    - 0.17 * Math.cos((hp - 30) * rad)
-    + 0.24 * Math.cos(2 * hp * rad)
-    + 0.32 * Math.cos((3 * hp + 6) * rad)
-    - 0.20 * Math.cos((4 * hp - 63) * rad);
-
+  const T = 1 - 0.17 * Math.cos((hp - 30) * rad) + 0.24 * Math.cos(2 * hp * rad)
+    + 0.32 * Math.cos((3 * hp + 6) * rad) - 0.20 * Math.cos((4 * hp - 63) * rad);
   const Lpm50sq = (Lp - 50) * (Lp - 50);
   const SL = 1 + 0.015 * Lpm50sq / Math.sqrt(20 + Lpm50sq);
-  const SC = 1 + 0.045 * Cp;
-  const SH = 1 + 0.015 * Cp * T;
-
-  const Cp7 = Math.pow(Cp, 7);
-  const RC = 2 * Math.sqrt(Cp7 / (Cp7 + 6103515625));
+  const SC = 1 + 0.045 * Cp, SH = 1 + 0.015 * Cp * T;
+  const Cp7 = Math.pow(Cp, 7), RC = 2 * Math.sqrt(Cp7 / (Cp7 + 6103515625));
   const dtheta = 30 * Math.exp(-((hp - 275) / 25) * ((hp - 275) / 25));
   const RT = -Math.sin(2 * dtheta * rad) * RC;
-
-  const valL = dLp / SL, valC = dCp / SC, valH = dHp / SH;
-  return Math.sqrt(valL * valL + valC * valC + valH * valH + RT * valC * valH);
+  const vL = dLp / SL, vC = dCp / SC, vH = dHp / SH;
+  return Math.sqrt(vL * vL + vC * vC + vH * vH + RT * vC * vH);
 }
 
-// ======================== Image Processing ========================
+// ==================== Image Processing ====================
 
-function createOffscreenFromImage(img) {
-  const canvas = document.createElement('canvas');
-  canvas.width = img.width; canvas.height = img.height;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+function getImageData(img) {
+  const c = document.createElement('canvas');
+  c.width = img.width; c.height = img.height;
+  const ctx = c.getContext('2d', { willReadFrequently: true });
   ctx.drawImage(img, 0, 0);
-  return { canvas, ctx, imageData: ctx.getImageData(0, 0, canvas.width, canvas.height) };
+  return ctx.getImageData(0, 0, c.width, c.height);
 }
 
-function medianPatchColor(data, width, x0, y0, x1, y1) {
+function medianPatch(data, width, x0, y0, x1, y1) {
   const rs = [], gs = [], bs = [];
-  const sx0 = Math.max(0, Math.floor(x0)), sy0 = Math.max(0, Math.floor(y0));
-  const sx1 = Math.floor(x1), sy1 = Math.floor(y1);
-  for (let y = sy0; y <= sy1; y++) {
-    for (let x = sx0; x <= sx1; x++) {
-      const idx = (y * width + x) * 4;
-      if (data[idx + 3] < 10) continue;
-      rs.push(data[idx]); gs.push(data[idx + 1]); bs.push(data[idx + 2]);
+  for (let y = Math.max(0, Math.floor(y0)); y <= Math.floor(y1); y++) {
+    for (let x = Math.max(0, Math.floor(x0)); x <= Math.floor(x1); x++) {
+      const i = (y * width + x) * 4;
+      if (data[i + 3] < 10) continue;
+      rs.push(data[i]); gs.push(data[i + 1]); bs.push(data[i + 2]);
     }
   }
   if (!rs.length) return [255, 255, 255];
@@ -393,253 +204,114 @@ function medianPatchColor(data, width, x0, y0, x1, y1) {
   return [rs[m], gs[m], bs[m]];
 }
 
-function hslSaturation(r, g, b) {
-  r /= 255; g /= 255; b /= 255;
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  if (max === min) return 0;
-  const l = (max + min) / 2;
-  return l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
+function getCropBox(img) {
+  const w = Math.round(img.width * CROP_WIDTH);
+  return { x: Math.round(img.width * CROP_LEFT), y: Math.round(img.height * CROP_TOP), w, h: w };
 }
 
-function getManualCropBox(img) {
-  const t = parseFloat(cropTopInput.value) / 100;
-  const l = parseFloat(cropLeftInput.value) / 100;
-  const s = parseFloat(cropSizeInput.value) / 100;
-  const w = Math.round(img.width * s);
-  return { x: Math.round(img.width * l), y: Math.round(img.height * t), w, h: w };
-}
+// ==================== Region Detection ====================
 
-function updateCropInputsFromBox(box, img) {
-  cropTopInput.value = (box.y / img.height * 100).toFixed(1);
-  cropLeftInput.value = (box.x / img.width * 100).toFixed(1);
-  cropSizeInput.value = (box.w / img.width * 100).toFixed(1);
-}
-
-function findBoardBoundingBox(img) {
-  if (manualCropCheck.checked) return getManualCropBox(img);
-
-  const { imageData } = createOffscreenFromImage(img);
-  const { data, width, height } = imageData;
-  const step = Math.max(1, Math.round(Math.max(width, height) / 600));
-
-  // Coverage-based: count fraction of pixels per row/col that are "colored"
-  // Board rows: 60-90% colored pixels. Button/text rows: <25%
-  const rowCoverage = new Float32Array(height);
-  for (let y = 0; y < height; y++) {
-    let colored = 0, total = 0;
-    for (let x = 0; x < width; x += step) {
-      const idx = (y * width + x) * 4;
-      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
-      const sat = hslSaturation(r, g, b);
-      const lum = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-      if (sat > 0.08 && lum > 0.12 && lum < 0.93) colored++;
-      total++;
-    }
-    rowCoverage[y] = total ? colored / total : 0;
-  }
-
-  const colCoverage = new Float32Array(width);
-  for (let x = 0; x < width; x++) {
-    let colored = 0, total = 0;
-    for (let y = 0; y < height; y += step) {
-      const idx = (y * width + x) * 4;
-      const r = data[idx], g = data[idx + 1], b = data[idx + 2];
-      const sat = hslSaturation(r, g, b);
-      const lum = (r * 0.299 + g * 0.587 + b * 0.114) / 255;
-      if (sat > 0.08 && lum > 0.12 && lum < 0.93) colored++;
-      total++;
-    }
-    colCoverage[x] = total ? colored / total : 0;
-  }
-
-  const winH = Math.max(3, Math.round(height * 0.012));
-  const smoothedRow = smoothProfile(rowCoverage, winH);
-  const winW = Math.max(3, Math.round(width * 0.012));
-  const smoothedCol = smoothProfile(colCoverage, winW);
-
-  // Board rows have >35% colored pixel coverage, sparse UI rows have <20%
-  const rowThresh = 0.35;
-  const colThresh = 0.35;
-
-  const { start: top, end: bottom } = longestRun(smoothedRow, rowThresh);
-  const { start: left, end: right } = longestRun(smoothedCol, colThresh);
-
-  let bw = right - left + 1, bh = bottom - top + 1;
-
-  if (bw < width * 0.15 || bh < height * 0.15) {
-    // Fallback: use center region
-    const side = Math.round(Math.min(width, height) * 0.75);
-    return { x: Math.round((width - side) / 2), y: Math.round((height - side) / 2), w: side, h: side };
-  }
-
-  const side = Math.min(bw, bh);
-  const cx = left + bw / 2, cy = top + bh / 2;
-  const margin = Math.round(side * 0.012);
-
-  return {
-    x: Math.max(0, Math.round(cx - side / 2 + margin)),
-    y: Math.max(0, Math.round(cy - side / 2 + margin)),
-    w: Math.round(side - margin * 2),
-    h: Math.round(side - margin * 2)
-  };
-}
-
-function smoothProfile(arr, win) {
-  const out = new Float32Array(arr.length);
-  const half = win >> 1;
-  for (let i = 0; i < arr.length; i++) {
-    let s = 0, c = 0;
-    for (let j = Math.max(0, i - half); j <= Math.min(arr.length - 1, i + half); j++) {
-      s += arr[j]; c++;
-    }
-    out[i] = s / c;
-  }
-  return out;
-}
-
-function percentile(arr, p) {
-  const sorted = [...arr].sort((a, b) => a - b);
-  return sorted[Math.floor(sorted.length * p)];
-}
-
-function longestRun(arr, thresh) {
-  let best = 0, bs = 0, be = 0, rs = -1;
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i] >= thresh) {
-      if (rs < 0) rs = i;
-      const len = i - rs + 1;
-      if (len > best) { best = len; bs = rs; be = i; }
-    } else {
-      rs = -1;
-    }
-  }
-  return { start: bs, end: be };
-}
-
-// ======================== Region Detection ========================
-
-function clusterColorsHierarchical(labColors, threshold) {
+function clusterColors(labColors, threshold) {
   const n = labColors.length;
-  const distMatrix = Array.from({ length: n }, () => new Float32Array(n));
-  for (let i = 0; i < n; i++) {
+  const dist = Array.from({ length: n }, () => new Float32Array(n));
+  for (let i = 0; i < n; i++)
     for (let j = i + 1; j < n; j++) {
       const d = ciede2000(labColors[i], labColors[j]);
-      distMatrix[i][j] = d;
-      distMatrix[j][i] = d;
+      dist[i][j] = d; dist[j][i] = d;
     }
-  }
 
-  const clusterId = new Int32Array(n);
-  for (let i = 0; i < n; i++) clusterId[i] = i;
+  const cid = new Int32Array(n);
+  for (let i = 0; i < n; i++) cid[i] = i;
 
   while (true) {
-    const activeIds = [...new Set(clusterId)];
-    if (activeIds.length <= 1) break;
-
     const members = new Map();
     for (let i = 0; i < n; i++) {
-      if (!members.has(clusterId[i])) members.set(clusterId[i], []);
-      members.get(clusterId[i]).push(i);
+      if (!members.has(cid[i])) members.set(cid[i], []);
+      members.get(cid[i]).push(i);
     }
-
-    let minDist = Infinity, mc1 = -1, mc2 = -1;
     const ids = [...members.keys()];
-    for (let a = 0; a < ids.length; a++) {
+    if (ids.length <= 1) break;
+
+    let minD = Infinity, m1 = -1, m2 = -1;
+    for (let a = 0; a < ids.length; a++)
       for (let b = a + 1; b < ids.length; b++) {
         const ma = members.get(ids[a]), mb = members.get(ids[b]);
         let sum = 0;
-        for (const i of ma) for (const j of mb) sum += distMatrix[i][j];
+        for (const i of ma) for (const j of mb) sum += dist[i][j];
         const avg = sum / (ma.length * mb.length);
-        if (avg < minDist) { minDist = avg; mc1 = ids[a]; mc2 = ids[b]; }
+        if (avg < minD) { minD = avg; m1 = ids[a]; m2 = ids[b]; }
       }
-    }
-
-    if (minDist > threshold) break;
-    for (let i = 0; i < n; i++) {
-      if (clusterId[i] === mc2) clusterId[i] = mc1;
-    }
+    if (minD > threshold) break;
+    for (let i = 0; i < n; i++) if (cid[i] === m2) cid[i] = m1;
   }
 
-  const remap = new Map();
-  let next = 0;
+  const remap = new Map(); let next = 0;
   const result = new Array(n);
   for (let i = 0; i < n; i++) {
-    if (!remap.has(clusterId[i])) remap.set(clusterId[i], next++);
-    result[i] = remap.get(clusterId[i]);
+    if (!remap.has(cid[i])) remap.set(cid[i], next++);
+    result[i] = remap.get(cid[i]);
   }
   return { clusters: result, numClusters: next };
 }
 
-function buildConnectedRegions(clusterIds, gridN) {
-  const total = gridN * gridN;
-  const regionOf = new Int32Array(total).fill(-1);
-  let nextRegion = 0;
-
+function buildRegions(clusterIds) {
+  const total = N * N;
+  const rid = new Int32Array(total).fill(-1);
+  let next = 0;
   for (let idx = 0; idx < total; idx++) {
-    if (regionOf[idx] >= 0) continue;
-    const cid = clusterIds[idx];
-    const rid = nextRegion++;
-    const queue = [idx];
-    regionOf[idx] = rid;
-    while (queue.length) {
-      const cur = queue.shift();
-      const cr = Math.floor(cur / gridN), cc = cur % gridN;
-      for (const [nr, nc] of [[cr - 1, cc], [cr + 1, cc], [cr, cc - 1], [cr, cc + 1]]) {
-        if (nr < 0 || nr >= gridN || nc < 0 || nc >= gridN) continue;
-        const ni = nr * gridN + nc;
-        if (regionOf[ni] >= 0 || clusterIds[ni] !== cid) continue;
-        regionOf[ni] = rid;
-        queue.push(ni);
+    if (rid[idx] >= 0) continue;
+    const c = clusterIds[idx], id = next++;
+    const q = [idx]; rid[idx] = id;
+    while (q.length) {
+      const cur = q.shift(), cr = Math.floor(cur / N), cc = cur % N;
+      for (const [nr, nc] of [[cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1]]) {
+        if (nr < 0 || nr >= N || nc < 0 || nc >= N) continue;
+        const ni = nr * N + nc;
+        if (rid[ni] >= 0 || clusterIds[ni] !== c) continue;
+        rid[ni] = id; q.push(ni);
       }
     }
   }
-  return { regionOf, numRegions: nextRegion };
+  return { regionOf: rid, numRegions: next };
 }
 
-function mergeSmallRegions(regionOf, labColors, gridN, minSize, maxMergeDist) {
-  const total = gridN * gridN;
-  const regionMembers = new Map();
+function mergeSmall(regionOf, labColors, maxDist) {
+  const total = N * N;
+  const members = new Map();
   for (let i = 0; i < total; i++) {
-    if (!regionMembers.has(regionOf[i])) regionMembers.set(regionOf[i], []);
-    regionMembers.get(regionOf[i]).push(i);
+    if (!members.has(regionOf[i])) members.set(regionOf[i], []);
+    members.get(regionOf[i]).push(i);
   }
-
-  for (const [rid, cells] of regionMembers) {
-    if (cells.length >= minSize) continue;
-    const avgLab = [0, 0, 0];
-    for (const c of cells) { avgLab[0] += labColors[c][0]; avgLab[1] += labColors[c][1]; avgLab[2] += labColors[c][2]; }
-    avgLab[0] /= cells.length; avgLab[1] /= cells.length; avgLab[2] /= cells.length;
-
-    const neighborRegions = new Set();
+  for (const [rid, cells] of members) {
+    if (cells.length >= 2) continue;
+    const avg = [0, 0, 0];
+    for (const c of cells) { avg[0] += labColors[c][0]; avg[1] += labColors[c][1]; avg[2] += labColors[c][2]; }
+    avg[0] /= cells.length; avg[1] /= cells.length; avg[2] /= cells.length;
+    const nbrs = new Set();
     for (const c of cells) {
-      const cr = Math.floor(c / gridN), cc = c % gridN;
-      for (const [nr, nc] of [[cr - 1, cc], [cr + 1, cc], [cr, cc - 1], [cr, cc + 1]]) {
-        if (nr < 0 || nr >= gridN || nc < 0 || nc >= gridN) continue;
-        const nrid = regionOf[nr * gridN + nc];
-        if (nrid !== rid) neighborRegions.add(nrid);
+      const cr = Math.floor(c / N), cc = c % N;
+      for (const [nr, nc] of [[cr-1,cc],[cr+1,cc],[cr,cc-1],[cr,cc+1]]) {
+        if (nr < 0 || nr >= N || nc < 0 || nc >= N) continue;
+        const nrid = regionOf[nr * N + nc];
+        if (nrid !== rid) nbrs.add(nrid);
       }
     }
-
-    let bestRid = -1, bestDist = Infinity;
-    for (const nrid of neighborRegions) {
-      const nCells = regionMembers.get(nrid);
-      if (!nCells) continue;
-      const nAvg = [0, 0, 0];
-      for (const c of nCells) { nAvg[0] += labColors[c][0]; nAvg[1] += labColors[c][1]; nAvg[2] += labColors[c][2]; }
-      nAvg[0] /= nCells.length; nAvg[1] /= nCells.length; nAvg[2] /= nCells.length;
-      const d = ciede2000(avgLab, nAvg);
-      if (d < bestDist) { bestDist = d; bestRid = nrid; }
+    let bestR = -1, bestD = Infinity;
+    for (const nrid of nbrs) {
+      const nc = members.get(nrid); if (!nc) continue;
+      const na = [0, 0, 0];
+      for (const c of nc) { na[0] += labColors[c][0]; na[1] += labColors[c][1]; na[2] += labColors[c][2]; }
+      na[0] /= nc.length; na[1] /= nc.length; na[2] /= nc.length;
+      const d = ciede2000(avg, na);
+      if (d < bestD) { bestD = d; bestR = nrid; }
     }
-
-    if (bestRid >= 0 && bestDist <= maxMergeDist) {
-      for (const c of cells) regionOf[c] = bestRid;
-      if (regionMembers.has(bestRid)) regionMembers.get(bestRid).push(...cells);
-      regionMembers.delete(rid);
+    if (bestR >= 0 && bestD <= maxDist) {
+      for (const c of cells) regionOf[c] = bestR;
+      if (members.has(bestR)) members.get(bestR).push(...cells);
+      members.delete(rid);
     }
   }
-
-  const remap = new Map();
-  let next = 0;
+  const remap = new Map(); let next = 0;
   for (let i = 0; i < total; i++) {
     if (!remap.has(regionOf[i])) remap.set(regionOf[i], next++);
     regionOf[i] = remap.get(regionOf[i]);
@@ -647,706 +319,266 @@ function mergeSmallRegions(regionOf, labColors, gridN, minSize, maxMergeDist) {
   return next;
 }
 
-function detectRegionsFromImage() {
-  if (!uploadedImage) {
-    setStatus('请先上传截图。', 'err');
-    return false;
+// ==================== Solver ====================
+
+function solve() {
+  const cells = [], rOf = [];
+  const rowC = Array.from({ length: N }, () => []);
+  const colC = Array.from({ length: N }, () => []);
+  const regC = Array.from({ length: regionCount }, () => []);
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const i = cells.length; cells.push([r, c]);
+    const reg = regionGrid[r][c]; rOf.push(reg);
+    rowC[r].push(i); colC[c].push(i); regC[reg].push(i);
   }
-
-  N = Math.max(2, Math.min(14, parseInt(sizeInput.value, 10) || 8));
-  sizeInput.value = String(N);
-  const tolerance = Math.max(3, Math.min(30, parseFloat(detectToleranceInput.value) || 12));
-  const insetRatio = Math.max(0.05, Math.min(0.4, parseFloat(detectInsetInput.value) || 0.22));
-
-  const box = findBoardBoundingBox(uploadedImage);
-  lastDetectedBox = box;
-  if (!manualCropCheck.checked) updateCropInputsFromBox(box, uploadedImage);
-  drawPreviewImage(uploadedImage, box);
-
-  const { imageData } = createOffscreenFromImage(uploadedImage);
-  const { data, width } = imageData;
-  const cellW = box.w / N, cellH = box.h / N;
-
-  const rgbSamples = [];
-  const labSamples = [];
-
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      const x0 = box.x + c * cellW + cellW * insetRatio;
-      const y0 = box.y + r * cellH + cellH * insetRatio;
-      const x1 = box.x + (c + 1) * cellW - cellW * insetRatio;
-      const y1 = box.y + (r + 1) * cellH - cellH * insetRatio;
-      const rgb = medianPatchColor(data, width, x0, y0, x1, y1);
-      rgbSamples.push(rgb);
-      labSamples.push(rgbToLab(rgb[0], rgb[1], rgb[2]));
-    }
-  }
-
-  lastSampledRgb = rgbSamples;
-  lastSampledLab = labSamples;
-
-  const { clusters, numClusters } = clusterColorsHierarchical(labSamples, tolerance);
-  const { regionOf } = buildConnectedRegions(clusters, N);
-  const finalCount = mergeSmallRegions(regionOf, labSamples, N, 2, tolerance);
-
-  pushHistory();
-  regionGrid = Array.from({ length: N }, (_, r) => Array.from({ length: N }, (_, c) => regionOf[r * N + c]));
-  solution = Array.from({ length: N }, () => Array(N).fill(false));
-  regionCount = finalCount;
-
-  const regionAvgRgb = new Map();
-  const regionSums = new Map(), regionCnts = new Map();
-  for (let i = 0; i < N * N; i++) {
-    const rid = regionOf[i];
-    if (!regionSums.has(rid)) { regionSums.set(rid, [0, 0, 0]); regionCnts.set(rid, 0); }
-    const s = regionSums.get(rid);
-    s[0] += rgbSamples[i][0]; s[1] += rgbSamples[i][1]; s[2] += rgbSamples[i][2];
-    regionCnts.set(rid, regionCnts.get(rid) + 1);
-  }
-  regionColors = new Map();
-  for (const [rid, sums] of regionSums) {
-    const cnt = regionCnts.get(rid);
-    const avg = [Math.round(sums[0] / cnt), Math.round(sums[1] / cnt), Math.round(sums[2] / cnt)];
-    regionAvgRgb.set(rid, avg);
-    const lab = rgbToLab(avg[0], avg[1], avg[2]);
-    const boosted = boostSaturation(avg, lab);
-    regionColors.set(rid, rgbToHex(boosted[0], boosted[1], boosted[2]));
-  }
-
-  renderBoard();
-  renderColorPreview();
-  renderRegionPalette();
-  updateStats();
-  setStatus(`识别完成：检测到 ${finalCount} 个区块（聚类 ${numClusters} 种颜色）。如有误差可用修正模式调整。`, 'ok');
-  return true;
-}
-
-function boostSaturation(rgb, lab) {
-  const [r, g, b] = rgb;
-  const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-  const boost = 1.3;
-  return [
-    Math.max(0, Math.min(255, Math.round(gray + (r - gray) * boost))),
-    Math.max(0, Math.min(255, Math.round(gray + (g - gray) * boost))),
-    Math.max(0, Math.min(255, Math.round(gray + (b - gray) * boost)))
-  ];
-}
-
-// ======================== Puzzle Solver ========================
-
-function solvePuzzle() {
-  cowsPerUnit = parseInt(modeSelect.value, 10);
-  const check = validateSetup();
-  if (!check.ok) {
-    setStatus(`设定不合法：<br>${check.errors.map(e => '• ' + escHtml(e)).join('<br>')}`, 'err');
-    return;
-  }
-
-  const cells = [], regionOf = [];
-  const rowCells = Array.from({ length: N }, () => []);
-  const colCells = Array.from({ length: N }, () => []);
-  const regionIndexCells = Array.from({ length: regionCount }, () => []);
-
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      const idx = cells.length;
-      cells.push([r, c]);
-      const reg = regionGrid[r][c];
-      regionOf.push(reg);
-      rowCells[r].push(idx);
-      colCells[c].push(idx);
-      regionIndexCells[reg].push(idx);
-    }
-  }
-
-  const adjacent = Array.from({ length: cells.length }, () => []);
+  const adj = Array.from({ length: cells.length }, () => []);
   for (let i = 0; i < cells.length; i++) {
     const [r, c] = cells[i];
-    for (const [nr, nc] of neighbors8(r, c)) adjacent[i].push(nr * N + nc);
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < N && nc >= 0 && nc < N) adj[i].push(nr * N + nc);
+    }
   }
-
-  const rowCount = Array(N).fill(0);
-  const colCount = Array(N).fill(0);
-  const regCountPlaced = Array(regionCount).fill(0);
-  const assign = Array(cells.length).fill(-1);
-
+  const K = cowsPerUnit();
+  const rc = Array(N).fill(0), cc = Array(N).fill(0), gc = Array(regionCount).fill(0);
+  const a = Array(cells.length).fill(-1);
   const units = [];
-  for (let r = 0; r < N; r++) units.push({ cells: rowCells[r], countFn: () => rowCount[r] });
-  for (let c = 0; c < N; c++) units.push({ cells: colCells[c], countFn: () => colCount[c] });
-  for (let k = 0; k < regionCount; k++) units.push({ cells: regionIndexCells[k], countFn: () => regCountPlaced[k] });
+  for (let r = 0; r < N; r++) units.push(rowC[r]);
+  for (let c = 0; c < N; c++) units.push(colC[c]);
+  for (let k = 0; k < regionCount; k++) units.push(regC[k]);
 
-  function canPlaceCow(idx) {
-    const [r, c] = cells[idx];
-    const reg = regionOf[idx];
-    if (rowCount[r] >= cowsPerUnit || colCount[c] >= cowsPerUnit || regCountPlaced[reg] >= cowsPerUnit) return false;
-    for (const nb of adjacent[idx]) if (assign[nb] === 1) return false;
+  function cnt(i) { const [r, c] = cells[i]; return [rc[r], cc[c], gc[rOf[i]]]; }
+  function canPlace(i) {
+    const [rv, cv, gv] = cnt(i);
+    if (rv >= K || cv >= K || gv >= K) return false;
+    for (const nb of adj[i]) if (a[nb] === 1) return false;
     return true;
   }
-
-  function applyValue(idx, value, trail) {
-    if (assign[idx] === value) return true;
-    if (assign[idx] !== -1) return false;
-    assign[idx] = value;
-    trail.push(idx);
-    if (value === 1) {
-      const [r, c] = cells[idx];
-      const reg = regionOf[idx];
-      rowCount[r]++; colCount[c]++; regCountPlaced[reg]++;
-      trail.push(['cnt', r, c, reg]);
-      if (rowCount[r] > cowsPerUnit || colCount[c] > cowsPerUnit || regCountPlaced[reg] > cowsPerUnit) return false;
-      for (const nb of adjacent[idx]) if (assign[nb] === 1) return false;
+  function set(i, v, t) {
+    if (a[i] === v) return true; if (a[i] !== -1) return false;
+    a[i] = v; t.push(i);
+    if (v === 1) {
+      const [r, c] = cells[i]; rc[r]++; cc[c]++; gc[rOf[i]]++;
+      t.push(['c', r, c, rOf[i]]);
+      if (rc[r] > K || cc[c] > K || gc[rOf[i]] > K) return false;
+      for (const nb of adj[i]) if (a[nb] === 1) return false;
     }
     return true;
   }
-
-  function undo(trail) {
-    for (let i = trail.length - 1; i >= 0; i--) {
-      const item = trail[i];
-      if (Array.isArray(item)) {
-        rowCount[item[1]]--; colCount[item[2]]--; regCountPlaced[item[3]]--;
-      } else {
-        assign[item] = -1;
-      }
+  function undo(t) {
+    for (let i = t.length - 1; i >= 0; i--) {
+      const x = t[i];
+      if (Array.isArray(x)) { rc[x[1]]--; cc[x[2]]--; gc[x[3]]--; }
+      else a[x] = -1;
     }
   }
-
-  function unitStats(unit) {
-    let placed = 0, unknown = 0;
-    for (const idx of unit.cells) {
-      if (assign[idx] === 1) placed++;
-      else if (assign[idx] === -1) unknown++;
-    }
-    return { placed, unknown, need: cowsPerUnit - placed };
+  function ustat(u) {
+    let p = 0, un = 0;
+    for (const i of u) { if (a[i] === 1) p++; else if (a[i] === -1) un++; }
+    return { p, un, need: K - p };
   }
-
   function feasible() {
-    for (const unit of units) {
-      const { placed, unknown } = unitStats(unit);
-      if (placed > cowsPerUnit || placed + unknown < cowsPerUnit) return false;
-    }
+    for (const u of units) { const s = ustat(u); if (s.p > K || s.p + s.un < K) return false; }
     return true;
   }
-
   function propagate() {
-    const trail = [];
-    let changed = true;
+    const t = []; let changed = true;
     while (changed) {
       changed = false;
-      if (!feasible()) { undo(trail); return null; }
-      for (const unit of units) {
-        const s = unitStats(unit);
+      if (!feasible()) { undo(t); return null; }
+      for (const u of units) {
+        const s = ustat(u);
         if (s.need === 0) {
-          for (const idx of unit.cells) {
-            if (assign[idx] === -1) {
-              if (!applyValue(idx, 0, trail)) { undo(trail); return null; }
-              changed = true;
-            }
-          }
-        } else if (s.need === s.unknown) {
-          for (const idx of unit.cells) {
-            if (assign[idx] === -1) {
-              if (!canPlaceCow(idx) || !applyValue(idx, 1, trail)) { undo(trail); return null; }
-              changed = true;
-            }
-          }
+          for (const i of u) if (a[i] === -1) { if (!set(i, 0, t)) { undo(t); return null; } changed = true; }
+        } else if (s.need === s.un) {
+          for (const i of u) if (a[i] === -1) { if (!canPlace(i) || !set(i, 1, t)) { undo(t); return null; } changed = true; }
         }
       }
-      for (let idx = 0; idx < cells.length; idx++) {
-        if (assign[idx] !== -1) continue;
-        if (!canPlaceCow(idx)) {
-          if (!applyValue(idx, 0, trail)) { undo(trail); return null; }
-          changed = true;
-        }
+      for (let i = 0; i < cells.length; i++) {
+        if (a[i] !== -1) continue;
+        if (!canPlace(i)) { if (!set(i, 0, t)) { undo(t); return null; } changed = true; }
       }
     }
-    return trail;
+    return t;
   }
-
-  function isSolved() { return units.every(u => unitStats(u).placed === cowsPerUnit); }
-
-  function chooseBranch() {
-    let best = -1, bestScore = -Infinity;
-    for (let idx = 0; idx < cells.length; idx++) {
-      if (assign[idx] !== -1) continue;
-      const [r, c] = cells[idx];
-      const reg = regionOf[idx];
-      const score = (cowsPerUnit - rowCount[r]) + (cowsPerUnit - colCount[c]) + (cowsPerUnit - regCountPlaced[reg])
-        - adjacent[idx].filter(nb => assign[nb] === -1).length * 0.01;
-      if (score > bestScore) { bestScore = score; best = idx; }
+  function pick() {
+    let best = -1, bs = -Infinity;
+    for (let i = 0; i < cells.length; i++) {
+      if (a[i] !== -1) continue;
+      const [r, c] = cells[i];
+      const s = (K - rc[r]) + (K - cc[c]) + (K - gc[rOf[i]]) - adj[i].filter(n => a[n] === -1).length * 0.01;
+      if (s > bs) { bs = s; best = i; }
     }
     return best;
   }
-
   function dfs() {
-    const pt = propagate();
-    if (!pt) return false;
-    if (isSolved()) return true;
-    const idx = chooseBranch();
-    if (idx < 0) { undo(pt); return false; }
-    for (const val of (canPlaceCow(idx) ? [1, 0] : [0])) {
+    const pt = propagate(); if (!pt) return false;
+    if (units.every(u => ustat(u).p === K)) return true;
+    const i = pick(); if (i < 0) { undo(pt); return false; }
+    for (const v of (canPlace(i) ? [1, 0] : [0])) {
       const t = [];
-      if ((val === 0 || canPlaceCow(idx)) && applyValue(idx, val, t) && dfs()) return true;
+      if ((v === 0 || canPlace(i)) && set(i, v, t) && dfs()) return true;
       undo(t);
     }
-    undo(pt);
-    return false;
+    undo(pt); return false;
   }
 
-  const solved = dfs();
-  if (!solved) {
-    solution = Array.from({ length: N }, () => Array(N).fill(false));
-    renderBoard();
-    setStatus('未找到可行解。请检查区块划分是否正确，或调整模式。', 'err');
-    return;
-  }
-
+  if (!dfs()) return false;
   solution = Array.from({ length: N }, () => Array(N).fill(false));
-  for (let idx = 0; idx < cells.length; idx++) {
-    if (assign[idx] === 1) { const [r, c] = cells[idx]; solution[r][c] = true; }
-  }
-  renderBoard();
-  setStatus(`求解成功！每行/列/区块各 ${cowsPerUnit} 头牛，共 ${N * cowsPerUnit} 头，八方向禁邻。`, 'ok');
+  for (let i = 0; i < cells.length; i++) if (a[i] === 1) { const [r, c] = cells[i]; solution[r][c] = true; }
+  return true;
 }
 
-// ======================== Board Rendering ========================
+// ==================== Rendering ====================
 
-function colorForRegion(id) {
-  if (id == null || id < 0) return '#ffffff';
-  if (!regionColors.has(id)) regionColors.set(id, palette[id % palette.length]);
-  return regionColors.get(id);
-}
-
-function renderBoard(conflicts = new Set()) {
+function renderBoard() {
   boardEl.innerHTML = '';
+  cellSize = Math.min(56, Math.floor(Math.min(720, window.innerWidth - 80) / N));
   boardEl.style.gridTemplateColumns = `repeat(${N}, ${cellSize}px)`;
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      const cell = document.createElement('div');
-      cell.className = 'cell';
-      cell.dataset.r = r; cell.dataset.c = c;
-      cell.style.width = `${cellSize}px`;
-      cell.style.height = `${cellSize}px`;
-      cell.style.background = colorForRegion(regionGrid[r]?.[c]);
-
-      if (dragCells.has(keyOf(r, c))) cell.classList.add('selected-drag');
-      if (conflicts.has(keyOf(r, c))) cell.classList.add('conflict');
-
-      const id = regionGrid[r]?.[c];
-      if (id >= 0) {
-        const tag = document.createElement('div');
-        tag.className = 'region-id';
-        tag.textContent = id + 1;
-        cell.appendChild(tag);
-      }
-      if (solution[r]?.[c]) {
-        const cow = document.createElement('div');
-        cow.className = 'cow';
-        cow.textContent = '🐮';
-        cell.appendChild(cow);
-      }
-
-      cell.addEventListener('pointerdown', onPointerDown);
-      cell.addEventListener('pointerenter', onPointerEnter);
-      boardEl.appendChild(cell);
-    }
-  }
-}
-
-function renderColorPreview() {
-  if (!lastSampledRgb || lastSampledRgb.length !== N * N) {
-    colorPreviewWrap.style.display = 'none';
-    return;
-  }
-  colorPreviewWrap.style.display = 'block';
-  colorPreviewGrid.innerHTML = '';
-  colorPreviewGrid.style.gridTemplateColumns = `repeat(${N}, 28px)`;
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      const rgb = lastSampledRgb[r * N + c];
-      const div = document.createElement('div');
-      div.className = 'color-preview-cell';
-      div.style.background = rgbToHex(rgb[0], rgb[1], rgb[2]);
-      const rid = regionGrid[r]?.[c];
-      if (rid >= 0) {
-        const lbl = document.createElement('div');
-        lbl.className = 'cpc-label';
-        lbl.textContent = rid + 1;
-        div.appendChild(lbl);
-      }
-      colorPreviewGrid.appendChild(div);
-    }
-  }
-}
-
-function renderRegionPalette() {
-  const ids = [...new Set(regionGrid.flat().filter(v => v >= 0))].sort((a, b) => a - b);
-  if (ids.length === 0) { regionPaletteWrap.style.display = 'none'; return; }
-  regionPaletteWrap.style.display = 'block';
-  regionPaletteEl.innerHTML = '';
-  for (const id of ids) {
-    const swatch = document.createElement('div');
-    swatch.className = 'region-swatch' + (fixBrushRegion === id ? ' active' : '');
-    swatch.style.background = colorForRegion(id);
-    swatch.textContent = id + 1;
-    swatch.addEventListener('click', () => {
-      fixBrushRegion = fixBrushRegion === id ? -1 : id;
-      renderRegionPalette();
-    });
-    regionPaletteEl.appendChild(swatch);
-  }
-}
-
-function drawPreviewImage(img, crop) {
-  if (!img) { imagePreview.style.display = 'none'; return; }
-  const maxW = 720;
-  const scale = Math.min(1, maxW / img.width);
-  imagePreview.width = Math.round(img.width * scale);
-  imagePreview.height = Math.round(img.height * scale);
-  imagePreview.style.display = 'block';
-  const ctx = imagePreview.getContext('2d');
-  ctx.clearRect(0, 0, imagePreview.width, imagePreview.height);
-  ctx.drawImage(img, 0, 0, imagePreview.width, imagePreview.height);
-  if (crop) {
-    ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 3;
-    ctx.strokeRect(crop.x * scale, crop.y * scale, crop.w * scale, crop.h * scale);
-    ctx.strokeStyle = '#3b82f6'; ctx.lineWidth = 1;
-    const cellW = crop.w / N, cellH = crop.h / N;
-    for (let i = 1; i < N; i++) {
-      const x = (crop.x + i * cellW) * scale;
-      ctx.beginPath(); ctx.moveTo(x, crop.y * scale); ctx.lineTo(x, (crop.y + crop.h) * scale); ctx.stroke();
-    }
-    for (let i = 1; i < N; i++) {
-      const y = (crop.y + i * cellH) * scale;
-      ctx.beginPath(); ctx.moveTo(crop.x * scale, y); ctx.lineTo((crop.x + crop.w) * scale, y); ctx.stroke();
-    }
-  }
-}
-
-// ======================== Interaction ========================
-
-function onPointerDown(e) {
-  if (e.button !== 0 && e.pointerType !== 'touch' && e.pointerType !== 'pen') return;
-  const cell = e.currentTarget;
-  const r = +cell.dataset.r, c = +cell.dataset.c;
-
-  if (fixBrushRegion >= 0) {
-    pushHistory();
-    regionGrid[r][c] = fixBrushRegion;
-    solution = Array.from({ length: N }, () => Array(N).fill(false));
-    renderBoard();
-    renderColorPreview();
-    updateStats();
-    setStatus(`已将 (${r + 1}, ${c + 1}) 改为区块 #${fixBrushRegion + 1}。`, 'info');
-    e.preventDefault();
-    return;
-  }
-
-  isDragging = true;
-  dragPointerId = e.pointerId ?? null;
-  dragCells.clear();
-  dragPath = [];
-  appendDragCell(r, c);
-  renderBoard();
-  e.preventDefault();
-}
-
-function onPointerEnter(e) {
-  if (!isDragging) return;
-  const cell = e.currentTarget;
-  appendDragCell(+cell.dataset.r, +cell.dataset.c);
-  renderBoard();
-}
-
-function handleGlobalPointerMove(e) {
-  if (!isDragging) return;
-  if (dragPointerId != null && e.pointerId != null && dragPointerId !== e.pointerId) return;
-  const el = document.elementFromPoint(e.clientX, e.clientY);
-  const cell = el?.closest?.('.cell');
-  if (!cell || !boardEl.contains(cell)) return;
-  const before = dragCells.size;
-  appendDragCell(+cell.dataset.r, +cell.dataset.c);
-  if (dragCells.size !== before) renderBoard();
-}
-
-function appendDragCell(r, c) {
-  const k = keyOf(r, c);
-  if (dragPath.length === 0) { dragPath.push([r, c]); dragCells.add(k); return; }
-  const [lr, lc] = dragPath[dragPath.length - 1];
-  if (lr === r && lc === c) return;
-  let cr = lr, cc = lc;
-  while (cr !== r || cc !== c) {
-    if (cc < c) cc++; else if (cc > c) cc--; else if (cr < r) cr++; else cr--;
-    const pk = keyOf(cr, cc);
-    if (!dragCells.has(pk)) { dragPath.push([cr, cc]); dragCells.add(pk); }
-  }
-}
-
-window.addEventListener('pointermove', handleGlobalPointerMove);
-window.addEventListener('pointerup', (e) => {
-  if (!isDragging) return;
-  if (dragPointerId != null && e.pointerId != null && dragPointerId !== e.pointerId) return;
-  isDragging = false; dragPointerId = null;
-  if (dragCells.size > 0) {
-    const cells = [...dragCells].map(parseKey);
-    if (!isConnected(cells)) {
-      setStatus('选区不连通，已忽略。请连续滑过相邻格子。', 'err');
-    } else {
-      pushHistory();
-      const newId = regionCount++;
-      cells.forEach(([r, c]) => regionGrid[r][c] = newId);
-      solution = Array.from({ length: N }, () => Array(N).fill(false));
-      setStatus(`已创建区块 #${newId + 1}，${cells.length} 格。`, 'info');
-      renderRegionPalette();
-    }
-  }
-  dragCells.clear(); dragPath = [];
-  renderBoard(); updateStats();
-});
-
-// ======================== Utilities ========================
-
-function keyOf(r, c) { return `${r},${c}`; }
-function parseKey(k) { return k.split(',').map(Number); }
-
-function neighbors4(r, c) {
-  const res = [];
-  if (r > 0) res.push([r - 1, c]); if (r < N - 1) res.push([r + 1, c]);
-  if (c > 0) res.push([r, c - 1]); if (c < N - 1) res.push([r, c + 1]);
-  return res;
-}
-
-function neighbors8(r, c) {
-  const res = [];
-  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
-    if (!dr && !dc) continue;
-    const nr = r + dr, nc = c + dc;
-    if (nr >= 0 && nr < N && nc >= 0 && nc < N) res.push([nr, nc]);
-  }
-  return res;
-}
-
-function isConnected(cells) {
-  if (cells.length <= 1) return true;
-  const set = new Set(cells.map(([r, c]) => keyOf(r, c)));
-  const seen = new Set();
-  const stack = [cells[0]];
-  seen.add(keyOf(cells[0][0], cells[0][1]));
-  while (stack.length) {
-    const [r, c] = stack.pop();
-    for (const [nr, nc] of neighbors4(r, c)) {
-      const k = keyOf(nr, nc);
-      if (set.has(k) && !seen.has(k)) { seen.add(k); stack.push([nr, nc]); }
-    }
-  }
-  return seen.size === set.size;
-}
-
-function pushHistory() {
-  historyStack.push({
-    regionGrid: regionGrid.map(row => [...row]),
-    solution: solution.map(row => [...row]),
-    regionCount,
-    regionColors: new Map(regionColors)
-  });
-  if (historyStack.length > 200) historyStack.shift();
-}
-
-function buildRegionCells() {
-  const map = new Map();
   for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-    const id = regionGrid[r][c];
-    if (!map.has(id)) map.set(id, []);
-    map.get(id).push([r, c]);
-  }
-  return map;
-}
-
-function normalizeRegions() {
-  const map = new Map();
-  let next = 0;
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-    const id = regionGrid[r][c];
-    if (id < 0) continue;
-    if (!map.has(id)) map.set(id, next++);
-    regionGrid[r][c] = map.get(id);
-  }
-  regionCount = next;
-  const nc = new Map();
-  for (const [oldId, newId] of map) nc.set(newId, regionColors.get(oldId) || palette[newId % palette.length]);
-  regionColors = nc;
-}
-
-function validateSetup() {
-  normalizeRegions();
-  const errors = [], conflicts = new Set();
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-    if (regionGrid[r][c] < 0) { errors.push(`(${r + 1},${c + 1}) 未分配区块`); conflicts.add(keyOf(r, c)); }
-  }
-  const rc = buildRegionCells();
-  for (const [id, cells] of rc) {
-    if (id < 0) continue;
-    if (cells.length < cowsPerUnit) {
-      errors.push(`区块#${id + 1}仅${cells.length}格，不足${cowsPerUnit}头牛`);
-      cells.forEach(([r, c]) => conflicts.add(keyOf(r, c)));
+    const el = document.createElement('div');
+    el.className = 'cell';
+    el.style.width = el.style.height = cellSize + 'px';
+    const id = regionGrid[r]?.[c];
+    el.style.background = id >= 0 ? (regionColors.get(id) || palette[id % palette.length]) : '#fff';
+    if (id >= 0) {
+      const tag = document.createElement('div');
+      tag.className = 'rid'; tag.textContent = id + 1;
+      el.appendChild(tag);
     }
-    if (!isConnected(cells)) {
-      errors.push(`区块#${id + 1}不连通`);
-      cells.forEach(([r, c]) => conflicts.add(keyOf(r, c)));
+    if (solution[r]?.[c]) {
+      const cow = document.createElement('div');
+      cow.className = 'cow'; cow.textContent = '🐮';
+      el.appendChild(cow);
     }
+    boardEl.appendChild(el);
   }
-  renderBoard(conflicts); updateStats();
-  return { ok: !errors.length, errors, conflicts };
 }
 
 function updateStats() {
-  const ids = new Set(regionGrid.flat().filter(v => v >= 0));
-  statSize.textContent = `${N}×${N}`;
-  statRegions.textContent = ids.size;
-  statTarget.textContent = N * cowsPerUnit;
+  document.getElementById('statSize').textContent = `${N}×${N}`;
+  document.getElementById('statRegions').textContent = new Set(regionGrid.flat().filter(v => v >= 0)).size;
+  document.getElementById('statTarget').textContent = N * cowsPerUnit();
 }
 
 function setStatus(html, type) { statusEl.className = `status ${type}`; statusEl.innerHTML = html; }
 
-function escHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// ==================== Main Flow ====================
+
+function detectAndSolve() {
+  if (!uploadedImage) { setStatus('请先上传截图。', 'err'); return; }
+
+  N = Math.max(5, Math.min(14, parseInt(sizeInput.value, 10) || 8));
+  sizeInput.value = N;
+
+  const box = getCropBox(uploadedImage);
+  const { data, width } = getImageData(uploadedImage);
+  const cellW = box.w / N, cellH = box.h / N;
+
+  const rgbSamples = [], labSamples = [];
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    const x0 = box.x + c * cellW + cellW * INSET;
+    const y0 = box.y + r * cellH + cellH * INSET;
+    const x1 = box.x + (c + 1) * cellW - cellW * INSET;
+    const y1 = box.y + (r + 1) * cellH - cellH * INSET;
+    const rgb = medianPatch(data, width, x0, y0, x1, y1);
+    rgbSamples.push(rgb);
+    labSamples.push(rgbToLab(rgb[0], rgb[1], rgb[2]));
+  }
+
+  const { clusters, numClusters } = clusterColors(labSamples, TOLERANCE);
+  const { regionOf } = buildRegions(clusters);
+  const finalCount = mergeSmall(regionOf, labSamples, TOLERANCE);
+
+  regionGrid = Array.from({ length: N }, (_, r) => Array.from({ length: N }, (_, c) => regionOf[r * N + c]));
+  solution = Array.from({ length: N }, () => Array(N).fill(false));
+  regionCount = finalCount;
+
+  regionColors = new Map();
+  const sums = new Map(), cnts = new Map();
+  for (let i = 0; i < N * N; i++) {
+    const rid = regionOf[i];
+    if (!sums.has(rid)) { sums.set(rid, [0,0,0]); cnts.set(rid, 0); }
+    const s = sums.get(rid);
+    s[0] += rgbSamples[i][0]; s[1] += rgbSamples[i][1]; s[2] += rgbSamples[i][2];
+    cnts.set(rid, cnts.get(rid) + 1);
+  }
+  for (const [rid, s] of sums) {
+    const n = cnts.get(rid);
+    const [r, g, b] = [Math.round(s[0]/n), Math.round(s[1]/n), Math.round(s[2]/n)];
+    const gray = 0.299*r + 0.587*g + 0.114*b;
+    regionColors.set(rid, rgbToHex(
+      Math.max(0, Math.min(255, Math.round(gray + (r - gray) * 1.3))),
+      Math.max(0, Math.min(255, Math.round(gray + (g - gray) * 1.3))),
+      Math.max(0, Math.min(255, Math.round(gray + (b - gray) * 1.3)))
+    ));
+  }
+
+  // Fill unassigned cells as individual regions
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    if (regionGrid[r][c] < 0) regionGrid[r][c] = regionCount++;
+  }
+
+  renderBoard(); updateStats();
+
+  // Validate
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    if (regionGrid[r][c] < 0) {
+      setStatus('存在未分配格子，无法求解。', 'err'); return;
+    }
+  }
+
+  setStatus('识别完成，正在求解…', 'info');
+  setTimeout(() => {
+    if (solve()) {
+      renderBoard();
+      setStatus(`求解成功！${finalCount} 个区块，每行/列/区块各 ${cowsPerUnit()} 头牛，共 ${N * cowsPerUnit()} 头。`, 'ok');
+    } else {
+      renderBoard();
+      setStatus(`未找到可行解（识别到 ${finalCount} 个区块）。可能识别有误，请检查截图或调整 N。`, 'err');
+    }
+  }, 50);
 }
 
-function loadUploadedImage(file) {
+function clearAll() {
+  regionGrid = Array.from({ length: N }, () => Array(N).fill(-1));
+  solution = Array.from({ length: N }, () => Array(N).fill(false));
+  regionCount = 0; regionColors = new Map();
+  renderBoard(); updateStats();
+  setStatus('已清除，可重新上传截图。', 'info');
+}
+
+function loadImage(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = reject;
-      img.src = reader.result;
-    };
+    reader.onload = () => { const img = new Image(); img.onload = () => resolve(img); img.onerror = reject; img.src = reader.result; };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
 }
 
-// ======================== Board Actions ========================
+// ==================== Events ====================
 
-function buildBoard() {
-  N = Math.max(2, Math.min(14, parseInt(sizeInput.value, 10) || 8));
-  cellSize = Math.max(24, Math.min(80, parseInt(cellSizeInput.value, 10) || 56));
-  cowsPerUnit = parseInt(modeSelect.value, 10);
-  regionGrid = Array.from({ length: N }, () => Array(N).fill(-1));
-  solution = Array.from({ length: N }, () => Array(N).fill(false));
-  regionCount = 0; regionColors = new Map(); historyStack = [];
-  dragCells.clear(); dragPath = []; fixBrushRegion = -1;
-  lastSampledRgb = null; lastSampledLab = null;
-  colorPreviewWrap.style.display = 'none';
-  regionPaletteWrap.style.display = 'none';
-  renderBoard(); updateStats();
-  setStatus('已重建空棋盘。上传截图识别，或手动拖动划分区块。', 'info');
-}
-
-function shufflePaletteForRegions() {
-  const ids = [...new Set(regionGrid.flat().filter(v => v >= 0))];
-  const copy = [...palette];
-  for (let i = copy.length - 1; i > 0; i--) { const j = Math.random() * (i + 1) | 0; [copy[i], copy[j]] = [copy[j], copy[i]]; }
-  regionColors = new Map();
-  ids.forEach((id, i) => regionColors.set(id, copy[i % copy.length]));
-  renderBoard(); renderRegionPalette();
-}
-
-function fillSingles() {
-  pushHistory();
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-    if (regionGrid[r][c] < 0) regionGrid[r][c] = regionCount++;
-  }
-  renderBoard(); renderRegionPalette(); updateStats();
-  setStatus('未划分格子已各自成为独立区块。', 'info');
-}
-
-function clearRegions() {
-  pushHistory();
-  regionGrid = Array.from({ length: N }, () => Array(N).fill(-1));
-  solution = Array.from({ length: N }, () => Array(N).fill(false));
-  regionCount = 0; regionColors = new Map(); fixBrushRegion = -1;
-  lastSampledRgb = null; lastSampledLab = null;
-  colorPreviewWrap.style.display = 'none';
-  regionPaletteWrap.style.display = 'none';
-  renderBoard(); updateStats();
-  setStatus('已清空所有区块。', 'info');
-}
-
-function clearSolution() {
-  solution = Array.from({ length: N }, () => Array(N).fill(false));
-  renderBoard();
-  setStatus('已清除解答。', 'info');
-}
-
-function undoLastStep() {
-  if (!historyStack.length) { setStatus('无可撤回操作。', 'info'); return; }
-  const snap = historyStack.pop();
-  regionGrid = snap.regionGrid; solution = snap.solution;
-  regionCount = snap.regionCount; regionColors = snap.regionColors;
-  dragCells.clear(); dragPath = [];
-  renderBoard(); renderRegionPalette(); updateStats();
-  setStatus('已撤回。', 'info');
-}
-
-// ======================== Event Binding ========================
-
-$('buildBtn').addEventListener('click', buildBoard);
-$('autoColorBtn').addEventListener('click', shufflePaletteForRegions);
-$('fillSinglesBtn').addEventListener('click', fillSingles);
-$('undoBtn').addEventListener('click', undoLastStep);
-$('clearRegionsBtn').addEventListener('click', clearRegions);
-$('clearSolutionBtn').addEventListener('click', clearSolution);
-$('solveBtn').addEventListener('click', solvePuzzle);
-$('checkBtn').addEventListener('click', () => {
-  cowsPerUnit = parseInt(modeSelect.value, 10);
-  const r = validateSetup();
-  setStatus(r.ok ? '设定合法，可以求解。' : `设定不合法：<br>${r.errors.map(e => '• ' + escHtml(e)).join('<br>')}`, r.ok ? 'ok' : 'err');
-});
-$('detectBtn').addEventListener('click', detectRegionsFromImage);
-$('detectAndSolveBtn').addEventListener('click', () => {
-  if (detectRegionsFromImage()) {
-    fillSingles();
-    solvePuzzle();
-  }
-});
-
-manualCropCheck.addEventListener('change', () => {
-  manualCropFields.style.display = manualCropCheck.checked ? 'block' : 'none';
-  if (manualCropCheck.checked && uploadedImage) drawPreviewImage(uploadedImage, getManualCropBox(uploadedImage));
-});
-$('lockCropBtn').addEventListener('click', () => {
-  if (!uploadedImage) { setStatus('请先上传截图。', 'err'); return; }
-  if (!lastDetectedBox) {
-    const box = findBoardBoundingBox(uploadedImage);
-    lastDetectedBox = box;
-  }
-  updateCropInputsFromBox(lastDetectedBox, uploadedImage);
-  manualCropCheck.checked = true;
-  manualCropFields.style.display = 'block';
-  setStatus('已锁定裁剪位置，后续截图将使用相同位置。可手动微调。', 'ok');
-});
-for (const id of ['cropTopInput', 'cropLeftInput', 'cropSizeInput']) {
-  $(id).addEventListener('change', () => {
-    if (manualCropCheck.checked && uploadedImage) drawPreviewImage(uploadedImage, getManualCropBox(uploadedImage));
-  });
-}
-
+document.getElementById('solveBtn').addEventListener('click', detectAndSolve);
+document.getElementById('clearBtn').addEventListener('click', clearAll);
 imageUpload.addEventListener('change', async (e) => {
-  const file = e.target.files?.[0];
-  if (!file) return;
+  const file = e.target.files?.[0]; if (!file) return;
   try {
-    uploadedImage = await loadUploadedImage(file);
-    drawPreviewImage(uploadedImage);
-    setStatus('截图已载入。确认棋盘边长 N 后，点击"识别分区"或"识别并求解"。', 'info');
+    uploadedImage = await loadImage(file);
+    setStatus('截图已载入，点击「识别并求解」开始。', 'info');
   } catch { setStatus('图片读取失败。', 'err'); }
 });
+sizeInput.addEventListener('change', () => {
+  N = Math.max(5, Math.min(14, parseInt(sizeInput.value, 10) || 8));
+  sizeInput.value = N; updateStats();
+});
+document.getElementById('modeSelect').addEventListener('change', updateStats);
 
-sizeInput.addEventListener('change', () => { sizeInput.value = Math.max(2, Math.min(14, parseInt(sizeInput.value, 10) || 8)); });
-cellSizeInput.addEventListener('change', () => { cellSizeInput.value = Math.max(24, Math.min(80, parseInt(cellSizeInput.value, 10) || 56)); });
-modeSelect.addEventListener('change', () => { cowsPerUnit = parseInt(modeSelect.value, 10); updateStats(); clearSolution(); });
-
-// ======================== Init ========================
-buildBoard();
+// Init
+regionGrid = Array.from({ length: N }, () => Array(N).fill(-1));
+solution = Array.from({ length: N }, () => Array(N).fill(false));
+renderBoard(); updateStats();
 </script>
 </body>
 </html>
